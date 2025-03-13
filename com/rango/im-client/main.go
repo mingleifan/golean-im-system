@@ -34,18 +34,39 @@ func NewClient(serverIp string, serverPort int) *Client {
 	return client
 }
 
-func (client *Client) UpdateName() bool {
-	fmt.Println(">>>>请输入用户名<<<<")
-	fmt.Scanln(&client.Name)
-
-	sendMsg := fmt.Sprintf("rename|%s\n", client.Name)
-
-	_, err := client.conn.Write([]byte(sendMsg))
+func (client *Client) sendToServer(message string) bool {
+	_, err := client.conn.Write([]byte(message))
 	if err != nil {
 		fmt.Println("conn.Write err:", err)
 		return false
 	}
 	return true
+}
+
+func (client *Client) UpdateName() bool {
+	fmt.Println(">>>>请输入用户名<<<<")
+	fmt.Scanln(&client.Name)
+
+	sendMsg := fmt.Sprintf("rename|%s\n", client.Name)
+	return client.sendToServer(sendMsg)
+}
+
+func (client *Client) PublicChat() {
+	var chatMsg string
+	fmt.Println(">>>>请输入聊天内容, exit退出<<<<")
+	fmt.Scanln(&chatMsg)
+
+	for chatMsg != "exit" {
+		//发送给服务器
+		if len(chatMsg) != 0 {
+			sendMsg := chatMsg + "\n"
+			client.sendToServer(sendMsg)
+		}
+
+		chatMsg = ""
+		//fmt.Println(">>>>请输入聊天内容, exit退出<<<<")
+		fmt.Scanln(&chatMsg)
+	}
 }
 
 // 处理server响应的信息，直接显示到标准输出
@@ -82,6 +103,7 @@ func (client *Client) Run() {
 		switch client.mode {
 		case 1:
 			//公聊模式
+			client.PublicChat()
 			break
 		case 2:
 			//私聊模式
