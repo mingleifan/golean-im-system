@@ -3,6 +3,7 @@ package im
 import (
 	"fmt"
 	"net"
+	"strings"
 )
 
 type User struct {
@@ -45,7 +46,7 @@ func (user *User) Offline() {
 	delete(user.server.OnlineMap, user.Name)
 	user.server.mapLock.Unlock()
 
-	user.server.BroadCast(user, "已上线")
+	user.server.BroadCast(user, "已下线")
 
 }
 
@@ -59,10 +60,29 @@ func (user *User) DoMessage(msg string) {
 		//查询当前在线用户都有哪些
 		user.server.mapLock.Lock()
 		for _, ou := range user.server.OnlineMap {
-			onlineMsg := fmt.Sprintf("[%s] %s : 在线...", ou.Addr, ou.Name)
-			user.SendMessage(onlineMsg)
+			ouMsg := fmt.Sprintf("[%s] %s : 在线...", ou.Addr, ou.Name)
+			user.SendMessage(ouMsg)
 		}
 		user.server.mapLock.Unlock()
+	} else if len(msg) > 7 && msg[:7] == "rename|" {
+		//消息格式: rename|张三
+		newName := strings.Split(msg, "|")[1]
+
+		//判断name是否存在
+		_, ok := user.server.OnlineMap[newName]
+		if ok {
+			user.SendMessage("当前用户名已被使用，请重新输入\n")
+		} else {
+			user.server.mapLock.Lock()
+
+			delete(user.server.OnlineMap, user.Name)
+			user.server.OnlineMap[newName] = user
+
+			user.server.mapLock.Unlock()
+
+			user.Name = newName
+			user.SendMessage("您已更新用户名" + newName + "\n")
+		}
 	} else {
 		user.server.BroadCast(user, msg)
 	}
