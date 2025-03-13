@@ -69,6 +69,37 @@ func (client *Client) PublicChat() {
 	}
 }
 
+func (client *Client) SelectUsers() {
+	client.sendToServer("who\n")
+}
+
+func (client *Client) PrivateChat() {
+	var remoteName string
+	var chatMsg string
+
+	client.SelectUsers()
+	fmt.Println(">>>>请输入聊天对象[用户名], exit退出<<<<<")
+	fmt.Scanln(&remoteName)
+
+	for remoteName != "exit" {
+		fmt.Println(">>>>请输入消息内容, exit退出<<<<<")
+		fmt.Scanln(&chatMsg)
+
+		for chatMsg != "exit" {
+			sendMsg := "to|" + remoteName + "|" + chatMsg + "\n"
+			client.sendToServer(sendMsg)
+
+			chatMsg = ""
+			fmt.Println(">>>>请输入消息内容, exit退出<<<<<")
+			fmt.Scanln(&chatMsg)
+		}
+
+		client.SelectUsers()
+		fmt.Println(">>>>请输入聊天对象[用户名], exit退出<<<<<")
+		fmt.Scanln(&remoteName)
+	}
+}
+
 // 处理server响应的信息，直接显示到标准输出
 func (client *Client) handleServerResp() {
 	//一旦client.conn有数据，就直接copy到stdout标准输出上，拥挤阻塞监听
@@ -107,6 +138,7 @@ func (client *Client) Run() {
 			break
 		case 2:
 			//私聊模式
+			client.PrivateChat()
 			break
 		case 3:
 			//更新用户名
