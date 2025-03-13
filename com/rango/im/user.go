@@ -91,7 +91,14 @@ func (user *User) DoMessage(msg string) {
 // ListenMessage 监听当前User channel的方法，一旦有消息，就直接发送给对端客户端
 func (user *User) ListenMessage() {
 	for {
-		msg := <-user.C
-		user.conn.Write([]byte(msg + "\n"))
+		msg, ok := <-user.C
+		if !ok {
+			break
+		}
+		_, err := user.conn.Write([]byte(msg + "\n"))
+		if err != nil {
+			fmt.Printf("write to addr[%v] err, user name: %v", user.Addr, user.Name)
+			continue
+		}
 	}
 }
